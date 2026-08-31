@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from studyrag_backend.models.chunk import Chunk
 from studyrag_backend.models.evaluation_case import RetrievalEvaluationCase
@@ -8,7 +8,7 @@ from studyrag_backend.services.ingestion import (
 )
 
 
-def _chunk(document_id, *, sequence: int, content_hash: str) -> Chunk:
+def _chunk(document_id: UUID, *, sequence: int, content_hash: str) -> Chunk:
     return Chunk(
         id=uuid4(),
         document_id=document_id,

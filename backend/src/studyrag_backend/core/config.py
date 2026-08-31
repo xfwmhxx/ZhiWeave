@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "ZhiWeave API"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
     environment: Literal["development", "test", "production"] = "development"
     debug: bool = False
     api_prefix: str = "/api/v1"
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     chunk_size: int = Field(default=480, ge=100, le=2000)
     chunk_overlap: int = Field(default=80, ge=0, le=500)
     chunk_strategy: Literal["character", "token"] = "character"
-    crawler_user_agent: str = "ZhiWeave/0.1 (+local educational RAG project)"
+    crawler_user_agent: str = "ZhiWeave/0.2 (+local educational RAG project)"
     crawler_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
     crawler_max_response_bytes: int = Field(default=2_000_000, ge=100_000, le=20_000_000)
     crawler_max_redirects: int = Field(default=5, ge=0, le=10)

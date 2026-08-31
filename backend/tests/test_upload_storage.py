@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import uuid4
 
 from studyrag_backend.services.upload_storage import (
@@ -6,7 +7,7 @@ from studyrag_backend.services.upload_storage import (
 )
 
 
-def test_completed_upload_is_removed_and_empty_directory_is_pruned(tmp_path) -> None:
+def test_completed_upload_is_removed_and_empty_directory_is_pruned(tmp_path: Path) -> None:
     upload_root = tmp_path / "uploads"
     task_dir = upload_root / str(uuid4())
     task_dir.mkdir(parents=True)
@@ -18,7 +19,7 @@ def test_completed_upload_is_removed_and_empty_directory_is_pruned(tmp_path) -> 
     assert not task_dir.exists()
 
 
-def test_upload_cleanup_refuses_paths_outside_root(tmp_path) -> None:
+def test_upload_cleanup_refuses_paths_outside_root(tmp_path: Path) -> None:
     upload_root = tmp_path / "uploads"
     upload_root.mkdir()
     outside = tmp_path / "keep.md"
@@ -28,7 +29,7 @@ def test_upload_cleanup_refuses_paths_outside_root(tmp_path) -> None:
     assert outside.exists()
 
 
-def test_knowledge_base_cleanup_only_removes_its_isolated_directory(tmp_path) -> None:
+def test_knowledge_base_cleanup_only_removes_its_isolated_directory(tmp_path: Path) -> None:
     upload_root = tmp_path / "uploads"
     knowledge_base_id = uuid4()
     target = upload_root / str(knowledge_base_id)

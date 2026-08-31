@@ -60,7 +60,15 @@ export type Chunk = {
   character_count: number
   start_offset: number | null
   end_offset: number | null
-  extra_metadata: { title?: string; source_uri?: string }
+  extra_metadata: { title?: string; source_uri?: string; section_heading?: string; chunk_format?: string }
+}
+
+export type ChunkContext = {
+  chunk: Chunk
+  previous_chunk: Chunk | null
+  next_chunk: Chunk | null
+  title: string
+  source_uri: string | null
 }
 
 export type IngestionTask = {
@@ -91,6 +99,8 @@ export type SearchHit = {
   content: string
   title: string
   source_uri: string | null
+  section_heading: string | null
+  character_count: number
 }
 
 export type ConsistencyReport = {

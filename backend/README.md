@@ -6,10 +6,10 @@ FastAPI + PostgreSQL + Celery + Redis + Qdrant 的本地 RAG 知识库后端。P
 
 - PostgreSQL、Redis、Qdrant 并发就绪检查。
 - 知识库、文档、Chunk 和入库任务模型。
-- 同域同目录网页抓取、`robots.txt`、正文抽取与 SSRF 防护。
-- 480/80 默认字符切片、偏移、SHA-256 和确定性向量 Point ID。
+- 同域同目录网页抓取、`robots.txt`、结构化正文抽取与 SSRF 防护。
+- 480/80 默认字符切片、自然边界/代码围栏保护、章节上下文、偏移、SHA-256 和确定性向量 Point ID。
 - `multilingual-e5-small` GPU Embedding，384 维、归一化向量和 E5 前缀。
-- Qdrant Collection、Payload 索引、幂等重建和 Top-K 检索。
+- Qdrant Collection、Payload 索引、幂等重建、PostgreSQL 权威回查、Top-K 去重和上下文读取。
 - Celery 网页入库任务与 PostgreSQL 业务进度。
 - 可移植 ZIP 导出与重建示例。
 - Ruff、Mypy、Alembic check 和 Pytest。

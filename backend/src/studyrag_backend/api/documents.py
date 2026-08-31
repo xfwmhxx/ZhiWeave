@@ -17,6 +17,7 @@ from studyrag_backend.models.enums import (
 )
 from studyrag_backend.models.ingestion_task import IngestionTask
 from studyrag_backend.schemas.ingestion import (
+    ChunkContextRead,
     ChunkRead,
     DocumentRead,
     DocumentRevisionRead,
@@ -302,3 +303,49 @@ async def list_chunks(
         .offset(offset)
     )
     return list(result)
+
+
+@router.get("/chunks/{chunk_id}/context", response_model=ChunkContextRead)
+async def read_chunk_context(
+    knowledge_base_id: UUID,
+    chunk_id: UUID,
+    session: DatabaseSession,
+) -> ChunkContextRead:
+    await get_knowledge_base(session, knowledge_base_id)
+    row = (
+        await session.execute(
+            select(Chunk, Document)
+            .join(Document, Document.id == Chunk.document_id)
+            .where(
+                Chunk.id == chunk_id,
+                Document.knowledge_base_id == knowledge_base_id,
+            )
+        )
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Chunk not found")
+    chunk, document = row
+    neighbors = list(
+        await session.scalars(
+            select(Chunk).where(
+                Chunk.document_id == chunk.document_id,
+                Chunk.sequence_index.in_([chunk.sequence_index - 1, chunk.sequence_index + 1]),
+            )
+        )
+    )
+    by_sequence = {neighbor.sequence_index: neighbor for neighbor in neighbors}
+    return ChunkContextRead(
+        chunk=ChunkRead.model_validate(chunk),
+        previous_chunk=(
+            ChunkRead.model_validate(by_sequence[chunk.sequence_index - 1])
+            if chunk.sequence_index - 1 in by_sequence
+            else None
+        ),
+        next_chunk=(
+            ChunkRead.model_validate(by_sequence[chunk.sequence_index + 1])
+            if chunk.sequence_index + 1 in by_sequence
+            else None
+        ),
+        title=document.title,
+        source_uri=document.source_uri,
+    )

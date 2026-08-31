@@ -33,3 +33,31 @@ def test_extract_page_prefers_article_content_and_keeps_source_links() -> None:
 
 def test_normalize_content_collapses_spacing() -> None:
     assert normalize_content("标题   \n\n\n\n  正文\t内容  ") == "标题\n\n正文 内容"
+
+
+def test_extract_page_keeps_inline_code_and_code_blocks_readable() -> None:
+    html = """
+    <html lang="zh-CN"><body><article>
+      <h1>Python 数据库操作</h1>
+      <h2>执行 SQL</h2>
+      <p>调用 <code>cursor.</code><code>execute</code>(<code>sql</code>,
+      <code>values</code>) 执行语句。</p>
+      <pre><code>cursor.execute(sql, values)\nrows = cursor.fetchall()</code></pre>
+    </article></body></html>
+    """
+
+    page = extract_page(html, "https://example.com/python/database.html")
+
+    assert "## 执行 SQL" in page.content
+    assert "cursor.\nexecute" not in page.content
+    assert "cursor.execute(sql, values)\nrows = cursor.fetchall()" in page.content
+    assert "```" in page.content
+
+
+def test_extract_page_falls_back_to_direct_text_inside_a_semantic_container() -> None:
+    page = extract_page(
+        "<html><body><main>没有段落标签的正文内容</main></body></html>",
+        "https://example.com/plain.html",
+    )
+
+    assert page.content == "没有段落标签的正文内容"

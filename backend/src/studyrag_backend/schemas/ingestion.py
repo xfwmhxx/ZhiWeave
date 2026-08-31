@@ -103,6 +103,14 @@ class ChunkRead(BaseModel):
     updated_at: datetime
 
 
+class ChunkContextRead(BaseModel):
+    chunk: ChunkRead
+    previous_chunk: ChunkRead | None = None
+    next_chunk: ChunkRead | None = None
+    title: str
+    source_uri: str | None = None
+
+
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=1000)
     top_k: int = Field(default=5, ge=1, le=20)
@@ -126,6 +134,8 @@ class SearchHit(BaseModel):
     content: str
     title: str
     source_uri: str | None
+    section_heading: str | None = None
+    character_count: int
 
 
 class ConsistencyReport(BaseModel):

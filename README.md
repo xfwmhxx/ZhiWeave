@@ -8,13 +8,24 @@ ZhiWeave 是一个面向学习资料的本地 RAG 知识库工作台。项目把
 
 LLM 生成层尚未接入，这是当前版本唯一刻意保留的下一阶段。已有功能不需要 OpenAI API Key；Embedding 使用本地模型。
 
+## 版本更新
+
+| 版本 | 日期 | 重点 |
+|---|---|---|
+| **v0.2.0** | 2026-08-31 | 修复碎行正文与半词 Chunk，加入章节上下文、检索去重、关键词高亮和前后文查看 |
+| v0.1.0 | 2026-08-30 | 完成网页/文件入库、E5、Qdrant、混合检索、评测、任务和导出主链路 |
+
+完整的“新增 / 修复 / 旧版本问题 / 升级方式”见 [CHANGELOG.md](./CHANGELOG.md)。
+
+> 从 v0.1.0 升级：网页知识库需要先用原入口重新抓取，让 HTML 经过新版结构化清洗，再执行一次整库蓝绿重建；只点“整库重建”不会重新解析旧 HTML。Markdown、TXT、PDF 可直接重建。
+
 ## 当前完成度
 
 ```text
 网页 / Markdown / TXT / PDF
-  → 安全校验与解析
-  → 字符或 Token 切片
-  → passage: Embedding
+  → 安全校验与结构化正文解析
+  → 边界安全的字符或 Token 切片
+  → 标题 + 章节 + 正文的 passage: Embedding
   → PostgreSQL 事务保存权威数据
   → Qdrant Cosine 索引
   → 语义 / BM25 / RRF 混合检索
@@ -26,11 +37,12 @@ LLM 生成层尚未接入，这是当前版本唯一刻意保留的下一阶段�
 
 - 任意公开 HTTP/HTTPS 入口的同域、同父目录抓取；MySQL 教程只是演示数据，不是代码限制。
 - `robots.txt`、逐跳 SSRF 校验、私网/保留地址拒绝、响应大小、超时、跳转和页数限制。
+- 按标题、段落、列表、代码块和表格抽取 HTML；行内代码不再被拆成逐词碎行，围栏代码块保留原始换行。
 - Markdown、TXT、PDF 上传与本地解析，默认单文件上限 20 MB；成功入库后清理临时原文件，删除知识库时清理其上传目录。
-- 字符切片与模型 Token 切片；内容哈希、Canonical URI 和确定性 Qdrant Point ID 保证幂等。
+- 字符切片与模型 Token 切片；重叠起点对齐完整句子、英文单词与代码围栏，Chunk 同时记录章节标题。
 - `intfloat/multilingual-e5-small`，384 维，严格区分 `query:` 与 `passage:` 前缀；默认 revision 固定到 commit `614241f...18b3`。
 - Embedding 模型、固定 revision、前缀、维度组成向量空间签名；配置不匹配时拒绝混用旧向量。
-- 纯向量、BM25 与加权 RRF 混合检索，支持语言/来源/最低分过滤、轻量术语扩展和可选 CrossEncoder Reranker。
+- 纯向量、BM25 与加权 RRF 混合检索，支持语言/来源/最低分过滤、轻量术语扩展、相邻 Chunk 去重和可选 CrossEncoder Reranker。
 - 检索评测集及 Recall@K、MRR、Hit Rate。
 - 文档重抓、重建、停用/启用、异步删除与版本留档。
 - Celery 任务暂停、继续、取消、重试、部分完成报告与知识库级并发配额。
@@ -38,7 +50,7 @@ LLM 生成层尚未接入，这是当前版本唯一刻意保留的下一阶段�
 - Chunk 级评测目标在重建前解除外键、重建后按文档、序号和内容哈希重新绑定；切片变化时保留文档级目标。
 - 通用 ZIP 流式导出与 Qdrant Snapshot；PostgreSQL 备份/恢复脚本。
 - API Key、按 Key 映射工作空间、每分钟限流、结构化日志、请求 ID 与 Prometheus `/metrics`。
-- React 显式路由工作台和独立图文使用指南；路由装配、状态控制器、页面与通用组件分层维护。
+- React 显式路由工作台和独立图文使用指南；检索证据支持章节定位、关键词高亮、完整 Chunk 与前后文查看。
 - Docker Compose、CPU/GPU 覆盖配置与 GitHub Actions 质量门禁。
 
 ## 真实验收结果
@@ -50,15 +62,15 @@ LLM 生成层尚未接入，这是当前版本唯一刻意保留的下一阶段�
 | 检查项 | 结果 |
 |---|---:|
 | 网页文档 | 40 |
-| Chunk / Qdrant Point | 407 / 407 |
+| Chunk / Qdrant Point | 355 / 355 |
 | Embedding | multilingual-e5-small，384 维 |
-| 蓝绿重建 | 成功，索引版本 v1 → v4；v4 已固定模型 commit 并验证评测目标重绑定 |
-| 双存储一致性 | 407 = 407，模型签名匹配 |
+| 蓝绿重建 | 成功，索引版本 v1 → v5；v5 使用结构化清洗、章节上下文并验证评测目标重绑定 |
+| 双存储一致性 | 355 = 355，模型签名匹配 |
 | 语义问题 | MySQL WHERE 子句如何筛选记录？ |
 | Top-1 | MySQL WHERE 子句 |
-| Top-1 Cosine | 约 0.913 |
-| 后端测试 | 32 passed |
-| 后端静态检查 | Ruff 通过，Mypy 51 个源码文件通过 |
+| Top-1 Cosine | 约 0.918 |
+| 后端测试 | 37 passed |
+| 后端静态检查 | Ruff 通过，Mypy 64 个源码文件通过 |
 | 数据库结构自检 | Alembic：No new upgrade operations detected |
 | 前端检查 | 0 lint warning，生产构建通过 |
 | Compose 静态检查 | CPU/GPU 两份 YAML 均成功解析 |

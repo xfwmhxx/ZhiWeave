@@ -134,10 +134,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 and "origin" in request.headers
                 and "access-control-request-method" in request.headers
             )
-            if not is_cors_preflight and workspace_id is None and request.url.path not in {
-                f"{resolved_settings.api_prefix}/health/live",
-                f"{resolved_settings.api_prefix}/health/ready",
-            }:
+            if (
+                not is_cors_preflight
+                and workspace_id is None
+                and request.url.path
+                not in {
+                    f"{resolved_settings.api_prefix}/health/live",
+                    f"{resolved_settings.api_prefix}/health/ready",
+                }
+            ):
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     content={"detail": "a valid API key is required"},

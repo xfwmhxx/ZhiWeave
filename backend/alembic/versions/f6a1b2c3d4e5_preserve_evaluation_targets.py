@@ -16,9 +16,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 PINNED_E5_REVISION = "614241f622f53c4eeff9890bdc4f31cfecc418b3"
-EVALUATION_CHUNK_FK = (
-    "fk_retrieval_evaluation_cases_relevant_chunk_id_chunks"
-)
+EVALUATION_CHUNK_FK = "fk_retrieval_evaluation_cases_relevant_chunk_id_chunks"
 
 
 def upgrade() -> None:

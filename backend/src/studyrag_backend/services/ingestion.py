@@ -187,6 +187,18 @@ def _split_document(
     return split_text(content, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 
+def _embedding_texts(source: SourceDocument, drafts: list[ChunkDraft]) -> list[str]:
+    """Add document/section context for retrieval without polluting displayed Chunk text."""
+    values: list[str] = []
+    for draft in drafts:
+        context = [source.title]
+        if draft.section_heading and draft.section_heading != source.title:
+            context.append(draft.section_heading)
+        context.append(draft.content)
+        values.append("\n".join(context))
+    return values
+
+
 def _chunk_rows_and_points(
     *,
     knowledge_base: KnowledgeBase,
@@ -215,6 +227,8 @@ def _chunk_rows_and_points(
             "source_type": source.source_type.value,
             "index_version": resolved_version,
             "enabled": True,
+            "section_heading": draft.section_heading,
+            "chunk_format": "structured-v2",
         }
         chunks.append(
             Chunk(
@@ -248,6 +262,8 @@ def _chunk_rows_and_points(
                     "model_signature": resolved_signature,
                     "index_version": resolved_version,
                     "enabled": True,
+                    "section_heading": draft.section_heading,
+                    "chunk_format": "structured-v2",
                 },
             )
         )
@@ -292,9 +308,7 @@ async def _index_source(
         chunk_overlap=knowledge_base.chunk_overlap,
         chunk_strategy=knowledge_base.chunk_strategy,
     )
-    vectors = await asyncio.to_thread(
-        embedding.embed_documents, [draft.content for draft in drafts]
-    )
+    vectors = await asyncio.to_thread(embedding.embed_documents, _embedding_texts(source, drafts))
     chunks, vector_points = _chunk_rows_and_points(
         knowledge_base=knowledge_base,
         document_id=document_id,
@@ -743,9 +757,6 @@ async def run_knowledge_base_reindex(task_id: UUID, settings: Settings) -> dict[
                 chunk_overlap=chunk_overlap,
                 chunk_strategy=chunk_strategy,
             )
-            vectors = await asyncio.to_thread(
-                embedding.embed_documents, [draft.content for draft in drafts]
-            )
             source = SourceDocument(
                 title=document.title,
                 content=content,
@@ -756,6 +767,9 @@ async def run_knowledge_base_reindex(task_id: UUID, settings: Settings) -> dict[
                 file_name=document.file_name,
                 mime_type=document.mime_type,
                 metadata=document.extra_metadata,
+            )
+            vectors = await asyncio.to_thread(
+                embedding.embed_documents, _embedding_texts(source, drafts)
             )
             chunks, points = _chunk_rows_and_points(
                 knowledge_base=knowledge_base,

@@ -1,8 +1,7 @@
 import { ImportPanel } from '../components/ImportPanel'
+import { RetrievalResultCard } from '../components/RetrievalResultCard'
 import { useWorkspace } from '../workspace/context'
 import {
-  formatComponentScore,
-  formatPrimaryScore,
   formatTime,
   isResolvedHistoricalFailure,
   taskLabels,
@@ -74,7 +73,7 @@ export function ChunksPage() {
   const { chunks, workspaceLoading } = useWorkspace()
   return <article className="panel data-panel">
     <div className="section-title"><div><span className="panel-kicker">CHUNK EXPLORER</span><h2>Chunk 工作台</h2></div><span>显示前 {chunks.length} 条</span></div>
-    {workspaceLoading ? <p className="panel-empty">正在读取 Chunk…</p> : chunks.length ? <div className="chunk-list">{chunks.map((chunk) => <article className="chunk-card" key={chunk.id}><header><b>#{chunk.sequence_index + 1}</b><span>{chunk.character_count} 字符</span><code>{chunk.content_hash.slice(0, 10)}</code></header><p>{chunk.content}</p><footer>{chunk.extra_metadata.title ?? chunk.document_id}</footer></article>)}</div> : <p className="panel-empty">完成一次网页入库后，可在这里检查切片边界、重叠与内容哈希。</p>}
+    {workspaceLoading ? <p className="panel-empty">正在读取 Chunk…</p> : chunks.length ? <div className="chunk-list">{chunks.map((chunk) => <article className="chunk-card" key={chunk.id}><header><b>#{chunk.sequence_index + 1}</b><span>{chunk.character_count} 字符</span><code>{chunk.content_hash.slice(0, 10)}</code></header>{chunk.extra_metadata.section_heading && <div className="chunk-heading">{chunk.extra_metadata.section_heading}</div>}<pre>{chunk.content}</pre><footer>{chunk.extra_metadata.title ?? chunk.document_id}</footer></article>)}</div> : <p className="panel-empty">完成一次网页入库后，可在这里检查切片边界、重叠与内容哈希。</p>}
   </article>
 }
 
@@ -108,11 +107,10 @@ export function RetrievalPage() {
           <button className="primary-button" disabled={!activeId || busy === 'search'} type="submit">{busy === 'search' ? '检索中…' : '运行检索'}</button>
         </form>
       </article>
-      <div className="search-results">{hits.length ? hits.map((hit, index) => <article className="panel result-card" key={hit.chunk_id}>
-        <header><span>TOP {index + 1} · {hit.match_type}</span><b>{formatPrimaryScore(hit)}</b></header>
-        <div className="score-details"><span>Cosine {formatComponentScore(hit.semantic_score, true)}</span><span>BM25 {formatComponentScore(hit.keyword_score, false)}</span>{hit.reranker_score != null && <span>Reranker {formatComponentScore(hit.reranker_score, false)}</span>}</div>
-        <h3>{hit.title}</h3><p>{hit.content}</p>{hit.source_uri && <a href={hit.source_uri} target="_blank" rel="noreferrer">查看原始页面 ↗</a>}
-      </article>) : <article className="panel panel-empty">入库完成后，输入一个中英文混合问题来观察召回结果。</article>}</div>
+      <div className="search-results">
+        <div className="retrieval-evidence-note"><b>检索证据</b><span>以下是数据库中的原始 Chunk，不是大模型整理后的最终回答。</span></div>
+        {hits.length ? hits.map((hit, index) => <RetrievalResultCard activeId={activeId} hit={hit} index={index} key={hit.chunk_id} query={query} />) : <article className="panel panel-empty">入库完成后，输入一个中英文混合问题来观察召回结果。</article>}
+      </div>
     </div>
     <article className="panel evaluation-panel">
       <div className="section-title"><div><span className="panel-kicker">RETRIEVAL EVALUATION</span><h2>检索评测集</h2></div><button className="secondary-button" disabled={!evaluationCases.length || busy === 'evaluation-run'} onClick={runEvaluation} type="button">运行 Recall@{topK}</button></div>

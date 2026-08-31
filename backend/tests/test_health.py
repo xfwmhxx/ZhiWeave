@@ -20,7 +20,7 @@ async def test_liveness_and_request_id(client: AsyncClient) -> None:
     assert response.json() == {
         "status": "alive",
         "service": "ZhiWeave API",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "checks": {},
     }
 
@@ -41,7 +41,7 @@ async def test_readiness_returns_503_when_dependency_is_down(
 ) -> None:
     app.state.readiness_service = ReadinessService(
         service_name="ZhiWeave API",
-        version="0.1.0",
+        version="0.2.0",
         timeout_seconds=0.1,
         checks={"postgresql": healthy, "redis": unhealthy},
     )

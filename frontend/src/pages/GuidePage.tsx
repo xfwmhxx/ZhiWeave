@@ -50,15 +50,15 @@ export function GuidePage() {
 
         <section className="panel guide-section" id="guide-inspect">
           <span className="guide-step">02 · 检查加工结果</span><h2>不要等到问答错误时才检查数据</h2>
-          <p>“数据源”用于确认页面或文件是否正确，也可以停用、重新启用、重抓、重建或异步删除文档；“Chunk 工作台”用于检查切片边界、重叠、字符数和内容哈希。重建时，Chunk 级评测目标会按文档、序号与内容哈希重新绑定；切片发生变化时则安全降级为文档级目标。</p>
-          <div className="guide-gallery"><figure><img src="/guide/02-sources.png" alt="已抓取页面和来源地址列表" loading="lazy" /><figcaption>每个文档保留原始 URL、语言、状态和抓取时间。</figcaption></figure><figure><img src="/guide/03-chunks.png" alt="Chunk 工作台中的真实切片内容" loading="lazy" /><figcaption>通过真实正文判断 480/80 切片是否破坏语义。</figcaption></figure></div>
+          <p>“数据源”用于确认页面或文件是否正确，也可以停用、重新启用、重抓、重建或异步删除文档；“Chunk 工作台”用于检查章节标题、切片边界、重叠、字符数和内容哈希。网页正文会按标题、段落、列表、代码块和表格清洗，字符重叠也会避开半个英文单词和代码块内部。重建时，Chunk 级评测目标会按文档、序号与内容哈希重新绑定；切片发生变化时则安全降级为文档级目标。</p>
+          <div className="guide-gallery"><figure><img src="/guide/02-sources.png" alt="已抓取页面和来源地址列表" loading="lazy" /><figcaption>每个文档保留原始 URL、语言、状态和抓取时间。</figcaption></figure><figure><img src="/guide/03-chunks.png" alt="Chunk 工作台中的真实切片内容" loading="lazy" /><figcaption>正文 Chunk 应当可以直接阅读；向量本身不需要也不适合人工阅读。</figcaption></figure></div>
           <div className="guide-actions"><button className="secondary-button" onClick={() => navigateTo('sources')} type="button">查看数据源</button><button className="secondary-button" onClick={() => navigateTo('chunks')} type="button">查看 Chunk</button></div>
         </section>
 
         <section className="panel guide-section" id="guide-retrieve">
           <span className="guide-step">03 · 对比并评测检索</span><h2>先把召回质量量化，再决定是否接入聊天模型</h2>
-          <p>检索实验室支持 <code>Qdrant 语义检索</code>、<code>BM25 关键词检索</code> 与 <code>RRF 混合融合</code>，并可按语言、来源、最低分过滤。添加“问题—期望文档”用例后，还能计算 Recall@K、MRR 和命中率。当前阶段不需要聊天 API Key。</p>
-          <figure><img src="/guide/04-retrieval.png" alt="MySQL WHERE 子句的真实 Top-K 检索结果" loading="lazy" /><figcaption>问题“MySQL WHERE 子句如何筛选记录？”命中了对应教程，Top 1 相似度约 91.3%。</figcaption></figure>
+          <p>检索实验室支持 <code>Qdrant 语义检索</code>、<code>BM25 关键词检索</code> 与 <code>RRF 混合融合</code>，并可按语言、来源、最低分过滤。结果区明确展示的是“检索证据”，不是聊天模型整理后的答案；可以查看章节、命中词、完整 Chunk 和前后文。添加“问题—期望文档”用例后，还能计算 Recall@K、MRR 和命中率。当前阶段不需要聊天 API Key。</p>
+          <figure><img src="/guide/04-retrieval.png" alt="MySQL WHERE 子句的真实 Top-K 检索结果" loading="lazy" /><figcaption>问题“MySQL WHERE 子句如何筛选记录？”命中了对应教程，新版结构化索引实测最高 Cosine 约 91.8%。</figcaption></figure>
           <button className="guide-link" onClick={() => navigateTo('retrieval')} type="button">运行一次检索 →</button>
         </section>
 
@@ -72,6 +72,7 @@ export function GuidePage() {
         <section className="panel guide-section guide-faq" id="guide-faq">
           <span className="guide-step">FAQ</span><h2>第一次使用常见问题</h2>
           <details><summary>为什么没有聊天框？</summary><p>RAG 的核心首先是可靠检索。当前版本把数据获取、Chunk、Embedding 和召回做成可验证工作台；LLM 生成层以后可以作为可选模块接入。</p></details>
+          <details><summary>检索结果为什么不是一段直接答案？</summary><p>这里显示的是从 PostgreSQL 取回的原始文本证据，Qdrant 只负责用向量找到对应 Chunk，并不存在“把向量翻译回中文”的步骤。正常的 Chunk 应当可以阅读；点击“查看前后文”可以补齐上下段。将来接入 LLM 后，才会把这些证据组织成带引用的自然语言答案。</p></details>
           <details><summary>为什么一个教程网址能抓取多个章节？</summary><p>入口页中的链接会进入广度优先队列，系统继续发现同域名、同目录的章节，直到队列为空或达到最大页数。</p></details>
           <details><summary>看到失败任务应该怎么办？</summary><p>先看它是否标注“后续已成功”。如果没有，阅读错误码与阶段信息后直接重试；长任务也可以先暂停再继续。网站拒绝抓取时，应尊重站点规则并改用有权使用的文件。</p></details>
           <details><summary>修改模型、维度或切片参数会怎样？</summary><p>这些参数决定整个向量空间，不能直接覆盖旧数据。设置页会创建新 Collection，全部文档重建成功后原子切换；切换后的旧索引清理属于独立的收尾动作。</p></details>
