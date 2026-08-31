@@ -1,0 +1,35 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
+# Python
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+*.py[cod]
+
+# Node.js
+**/node_modules/
+**/dist/
+**/.vite/
+.pnpm-store/
+
+# Runtime data and logs
+/data/
+/storage/
+/models/
+*.log
+
+# Local long-form learning notes and blog drafts
+/Blog/
+
+# IDE and operating system files
+.idea/
+.DS_Store
+Thumbs.db

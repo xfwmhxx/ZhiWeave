@@ -1,0 +1,22 @@
+:root {
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  color: #23251f;
+  background: #f5f5f1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --ink: #22241f;
+  --muted: #6f7269;
+  --line: #dedfd8;
+  --surface: #ffffff;
+  --surface-soft: #f7f7f3;
+  --sidebar: #f0f1ec;
+  --indigo: #5b5bd6;
+  --indigo-soft: #ededff;
+  --teal: #168778;
+  --teal-soft: #e4f4f0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input { font: inherit; }
+button { cursor: pointer; }

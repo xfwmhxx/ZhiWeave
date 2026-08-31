@@ -1,0 +1,81 @@
+[project]
+name = "studyrag-backend"
+version = "0.1.0"
+description = "ZhiWeave FastAPI backend"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.19.1",
+    "asyncpg>=0.31.0",
+    "beautifulsoup4>=4.15.0",
+    "celery[redis]>=5.6.3",
+    "fastapi>=0.141.1",
+    "httpx>=0.28.1",
+    "lxml>=6.1.2",
+    "numpy>=2.5.2",
+    "prometheus-client>=0.22.1",
+    "pydantic-settings>=2.15.0",
+    "pypdf>=6.0.0",
+    "python-multipart>=0.0.20",
+    "qdrant-client>=1.19.0",
+    "redis>=6.4.0",
+    "sentence-transformers>=6.0.0",
+    "sqlalchemy[asyncio]>=2.0.52",
+    "trafilatura>=2.2.0",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[project.scripts]
+studyrag-backend = "studyrag_backend:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.5",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "integration: requires local PostgreSQL and Redis services",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+packages = ["studyrag_backend"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["pypdf", "pypdf.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["celery", "celery.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+source = ["studyrag_backend"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

@@ -1,0 +1,19 @@
+services:
+  api:
+    environment:
+      STUDYRAG_EMBEDDING_DEVICE: cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+  worker:
+    environment:
+      STUDYRAG_EMBEDDING_DEVICE: cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]

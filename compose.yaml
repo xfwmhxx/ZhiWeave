@@ -1,0 +1,104 @@
+name: zhiweave
+
+x-backend-environment: &backend-environment
+  STUDYRAG_ENVIRONMENT: production
+  STUDYRAG_DATABASE_URL: postgresql+asyncpg://zhiweave:${POSTGRES_PASSWORD:-zhiweave-dev}@postgres:5432/zhiweave
+  STUDYRAG_REDIS_URL: redis://redis:6379/0
+  STUDYRAG_CELERY_BROKER_URL: redis://redis:6379/1
+  STUDYRAG_CELERY_RESULT_BACKEND: redis://redis:6379/2
+  STUDYRAG_QDRANT_URL: http://qdrant:6333
+  STUDYRAG_MODEL_CACHE_DIR: /data/models
+  STUDYRAG_UPLOAD_DIR: /data/uploads
+  STUDYRAG_EMBEDDING_MODEL_REVISION: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+  STUDYRAG_CORS_ORIGINS: '["http://localhost:5173"]'
+  STUDYRAG_API_KEY: ${STUDYRAG_API_KEY:-change-me-before-deploying}
+
+x-backend: &backend
+  build:
+    context: ./backend
+  restart: unless-stopped
+  environment: *backend-environment
+  volumes:
+    - model_cache:/data/models
+    - uploads:/data/uploads
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+    qdrant:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zhiweave
+      POSTGRES_USER: zhiweave
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zhiweave-dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zhiweave -d zhiweave"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8.10.1-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:v1.18.2
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build:
+      context: ./backend
+    environment: *backend-environment
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    ports:
+      - "8000:8000"
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "studyrag_backend.workers.celery_app:celery_app", "worker", "--loglevel=INFO", "--queues=ingestion,embedding,export,default", "--concurrency=1"]
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  model_cache:
+  uploads:
